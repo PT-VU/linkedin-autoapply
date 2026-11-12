@@ -1,0 +1,133 @@
+# Copy this file to config.yaml. Do not commit config.yaml.
+
+linkedin:
+  use_saved_profile: true
+  # Optional Edge user-data directory. Leave blank to use the configured CDP session.
+  profile_path: ""
+  auth:
+    # On first run, open a visible LinkedIn login page and wait for the user.
+    # Passwords and 2FA codes are never read or stored by this project.
+    interactive_login: true
+    login_timeout_seconds: 300
+    poll_interval_seconds: 2
+    login_url: "https://www.linkedin.com/login"
+    success_url: "https://www.linkedin.com/feed/"
+
+browser:
+  browser_type: chromium
+  channel: msedge
+  headless: false
+  slow_mo: 250
+
+search:
+  keywords:
+    - "AI Engineer"
+    - "Machine Learning Engineer"
+  location: ""
+  locations: []
+  date_posted: "Past 24 hours"
+  experience_level: []
+  job_type: []
+  remote: []
+  # 0 means continue until LinkedIn has no next page.
+  max_pages: 0
+
+  keyword_expansion:
+    enabled: false
+    target_count: 10
+    candidate_keywords: []
+
+  keyword_feedback:
+    enabled: true
+    window_days: 7
+    minimum_jobs: 15
+    minimum_runs: 3
+    minimum_match_rate: 0.12
+    replace_zero_result_after_runs: 3
+    max_replacements_per_update: 1
+    candidate_keywords: []
+    families: {}
+
+rate_limit:
+  linkedin:
+    enabled: true
+    max_job_reads_per_minute: 30
+    min_seconds_between_job_reads: 1.2
+    min_seconds_between_searches: 3
+
+resume:
+  path: "user_files/resume.pdf"
+
+user_requirements:
+  path: "user_files/job_requirements.md"
+
+matching:
+  threshold: 6.5
+  easy_apply_threshold: 5.0
+  model: "codex"
+  rubric_path: "data/scoring_rubric.md"
+
+ai:
+  # Default: local Codex CLI. The model is inherited from the local Codex setup.
+  backend: codex
+  command: codex
+  model: ""
+  sandbox: workspace-write
+  timeout_seconds: 260
+
+  # API mode is optional. Use environment variables instead of storing secrets here.
+  # backend: api
+  # provider: openai_compatible
+  # base_url: "https://api.example.com/v1"
+  # model: "your-model"
+  # api_key_env: "OPENAI_API_KEY"
+  # json_mode: false
+
+auto_apply:
+  easy_apply: true
+  # Experimental: opens eligible external applications. CAPTCHA, login,
+  # registration, and unverifiable submissions fall back to the manual queue.
+  external_apply: true
+  max_applications_per_run: 20
+  confirm_before_apply: false
+  manual_external_domains: []
+
+external_agent:
+  timeout_seconds: 600
+  handoff_timeout_seconds: 120
+  defer_handoff: true
+
+manual_apply_queue:
+  enabled: true
+  path: "data/manual_apply_queue.xlsx"
+
+profile:
+  notes: ""
+  first_name: ""
+  last_name: ""
+  email: ""
+  phone: ""
+  city: ""
+  country: ""
+  linkedin_url: ""
+  work_authorization: ""
+  sponsorship_required: ""
+  willing_to_relocate: ""
+  highest_education: ""
+  languages: {}
+  skill_years: {}
+  diploma_path: ""
+  transcript_path: ""
+
+cover_letter:
+  enabled: true
+  folder: "cover_letters"
+  template_path: "user_files/cover_letter_template.docx"
+  external_session_id: ""
+  external_output_dir: "cover_letters"
+  external_timeout_seconds: 300
+
+logging:
+  level: INFO
+  file: "logs/run.log"
+  screenshot_on: [submit, error]

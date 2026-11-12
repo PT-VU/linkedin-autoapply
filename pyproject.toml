@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linkedin-autoapply"
+version = "0.1.0"
+description = "Configurable AI-assisted LinkedIn job discovery and application workflow"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = [
+  "playwright>=1.45.0",
+  "pdfplumber>=0.11.0",
+  "python-docx>=1.1.0",
+  "pyyaml>=6.0",
+  "openpyxl>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pyinstaller>=6.0"]
+
+[project.scripts]
+linkedin-autoapply = "linkedin_autoapply.cli:main"
+linkedin-autoapply-gui = "linkedin_autoapply.gui:main"
+
+[tool.setuptools]
+packages = ["linkedin_autoapply"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

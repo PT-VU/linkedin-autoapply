@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["wakeup_received", "event_id", "recommended_actions", "explanation"],
+  "properties": {
+    "wakeup_received": {
+      "type": "boolean",
+      "const": true
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "target", "value"],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "explanation": {
+      "type": "string"
+    }
+  }
+}

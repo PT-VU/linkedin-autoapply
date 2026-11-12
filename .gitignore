@@ -1,0 +1,34 @@
+# Local configuration and credentials
+config.yaml
+profile.yaml
+.env
+.env.*
+
+# Runtime state and user data
+data/*
+!data/.gitkeep
+!data/scoring_rubric.md
+!data/applicant_context/
+!data/applicant_context/**
+logs/*
+!logs/.gitkeep
+screenshots/*
+!screenshots/.gitkeep
+user_files/*
+!user_files/.gitkeep
+cover_letters/*
+!cover_letters/.gitkeep
+
+# Python/build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+dist/
+build/
+*.spec
+*.egg-info/
+
+# Local Codex/Edge state
+codex_runtime.json
+external_browser.json

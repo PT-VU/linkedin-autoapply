@@ -1,0 +1,154 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "response_type",
+    "event_id",
+    "actions",
+    "scores",
+    "cover_letter_text",
+    "cover_letter_filename",
+    "needs_user",
+    "questions",
+    "explanation"
+  ],
+  "properties": {
+    "response_type": {
+      "type": "string",
+      "enum": ["instructions", "scores", "cover_letter", "needs_user", "error"]
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "target", "value"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "fill_input",
+              "select_option",
+              "click_radio",
+              "click_radio_by_index",
+              "click_checkbox",
+              "click_button",
+              "upload_file",
+              "press_key",
+              "wait",
+              "react_fill",
+              "fill_combobox"
+            ]
+          },
+          "target": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job_id",
+          "score",
+          "technical_match",
+          "career_match",
+          "practical_match",
+          "eligibility",
+          "confidence",
+          "decision",
+          "role_archetype",
+          "genai_share",
+          "reason",
+          "evidence",
+          "gaps"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "technical_match": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "career_match": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "practical_match": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "eligibility": {
+            "type": "string",
+            "enum": ["pass", "review", "fail"]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["apply_first", "apply_standard", "manual_review", "skip"]
+          },
+          "role_archetype": {
+            "type": "string"
+          },
+          "genai_share": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "evidence": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {"type": "string"}
+          },
+          "gaps": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {"type": "string"}
+          }
+        }
+      }
+    },
+    "cover_letter_text": {
+      "type": "string"
+    },
+    "cover_letter_filename": {
+      "type": "string"
+    },
+    "needs_user": {
+      "type": "boolean"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "explanation": {
+      "type": "string"
+    }
+  }
+}

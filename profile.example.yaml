@@ -1,0 +1,15 @@
+# Optional separate profile file. The GUI writes these values into config.yaml.
+profile:
+  first_name: ""
+  last_name: ""
+  email: ""
+  phone: ""
+  city: ""
+  country: ""
+  linkedin_url: ""
+  work_authorization: ""
+  sponsorship_required: ""
+  willing_to_relocate: ""
+  highest_education: ""
+  languages: {}
+  skill_years: {}
