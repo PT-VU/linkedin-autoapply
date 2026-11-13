@@ -129,6 +129,23 @@ TRANSLATIONS = {
 }
 
 
+DATE_POSTED_VALUES = ("Past Month", "Past 2 weeks", "Past Week", "Past 24 hours")
+DATE_POSTED_LABELS = {
+    "en": {
+        "Past Month": "Past month",
+        "Past 2 weeks": "Past 2 weeks",
+        "Past Week": "Past week",
+        "Past 24 hours": "Past 24 hours",
+    },
+    "zh": {
+        "Past Month": "一个月内",
+        "Past 2 weeks": "两周内",
+        "Past Week": "一周内",
+        "Past 24 hours": "24 小时内",
+    },
+}
+
+
 def project_root() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
@@ -206,7 +223,9 @@ class AutoApplyWindow:
         self.language_display = tk.StringVar(value="English" if self.language.get() == "en" else "中文")
         self.keywords = tk.StringVar(value=", ".join(search.get("keywords") or []))
         self.location = tk.StringVar(value=str(search.get("location") or ""))
-        self.date_posted = tk.StringVar(value=str(search.get("date_posted") or ""))
+        configured_date = str(search.get("date_posted") or "").strip()
+        self.date_posted = tk.StringVar(value=configured_date if configured_date in DATE_POSTED_VALUES else "Past 24 hours")
+        self.date_posted_display = tk.StringVar()
         raw_pages = int(search.get("max_pages") or 0)
         self.max_pages = tk.StringVar(value="" if raw_pages <= 0 else str(raw_pages))
         self.threshold = tk.StringVar(value=str(matching.get("threshold") or 6.5))
@@ -292,7 +311,13 @@ class AutoApplyWindow:
         self._section(main, "search_settings")
         self._row(main, "keywords", self.keywords)
         self._row(main, "location", self.location)
-        self._row(main, "date_posted", self.date_posted)
+        date_row = ttk.Frame(main)
+        date_row.pack(fill="x", padx=14, pady=4)
+        self._label(date_row, "date_posted", width=28).pack(side="left")
+        self.date_posted_box = ttk.Combobox(date_row, textvariable=self.date_posted_display, state="readonly")
+        self.date_posted_box.pack(side="left", fill="x", expand=True)
+        self.date_posted_box.bind("<<ComboboxSelected>>", self._on_date_posted_selected)
+        self._refresh_date_posted_options()
         self._row(main, "max_pages", self.max_pages)
 
         keyword_options = ttk.Frame(main)
@@ -429,12 +454,28 @@ class AutoApplyWindow:
             self.backend_box.configure(values=[self.t("backend_codex"), self.t("backend_api")])
             self.backend_box.set(self.t("backend_api") if self.ai_backend.get() == "api" else self.t("backend_codex"))
             self._set_api_visibility()
+        if hasattr(self, "date_posted_box"):
+            self._refresh_date_posted_options()
         if hasattr(self, "status") and not self.process:
             self.status.set(self.t("status_idle"))
 
     def _on_language_selected(self, _event=None):
         self.language.set("zh" if self.language_display.get() == "中文" else "en")
         self._apply_language()
+
+    def _refresh_date_posted_options(self):
+        labels = [DATE_POSTED_LABELS[self.language.get()][value] for value in DATE_POSTED_VALUES]
+        self.date_posted_box.configure(values=labels)
+        current = self.date_posted.get()
+        if current not in DATE_POSTED_VALUES:
+            current = "Past 24 hours"
+            self.date_posted.set(current)
+        self.date_posted_display.set(DATE_POSTED_LABELS[self.language.get()][current])
+
+    def _on_date_posted_selected(self, _event=None):
+        selected = self.date_posted_display.get()
+        labels = DATE_POSTED_LABELS[self.language.get()]
+        self.date_posted.set(next((value for value, label in labels.items() if label == selected), "Past 24 hours"))
 
     def _show_rubric(self, anchor):
         self._hide_rubric()
