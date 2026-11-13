@@ -472,7 +472,8 @@ def codex_command(args: argparse.Namespace, result_file: Path) -> list[str]:
         # The desktop app exposes the currently installed CLI here.  Prefer
         # it over the npm shim: the shim resolves through Node and, under the
         # project sandbox, can fail before `codex exec` starts with EPERM on
-        # C:\\Users\\PT.  It remains a fallback if the project runtime is
+        # a user-specific installation path. It remains a fallback if the
+        # project runtime is
         # absent or stale.
         os.environ.get("CODEX_APP_RUNTIME_CLI_PATH"),
         shutil.which("codex"),

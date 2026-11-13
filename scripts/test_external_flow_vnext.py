@@ -1,6 +1,6 @@
 """Run the opt-in external-flow experiment without touching production flow.
 
-Usage (from F:\\LinkedIn-AutoApply):
+Usage (from the project root):
     python scripts\\test_external_flow_vnext.py
 
 The script replays known failure shapes and reads the existing page-level ATS

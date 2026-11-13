@@ -8,12 +8,13 @@
 # Usage: bash scripts/permanent_scoring_agent.sh
 #===============================================================================
 
-BASE="/f/LinkedIn-AutoApply"
+BASE="${BASE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 LOG="$BASE/data/scoring_agent.log"
 THRESHOLD=5.5
 
-# Windows-compatible base path for native Python
-WINBASE="F:/LinkedIn-AutoApply"
+# Override WINBASE only when the embedded Python process needs a different
+# filesystem representation (for example, a Windows drive path in Git Bash).
+WINBASE="${WINBASE:-$BASE}"
 
 # ------------------------------------------------------------------
 # Log helper

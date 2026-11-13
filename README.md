@@ -27,11 +27,12 @@ project does not bypass CAPTCHA or invent answers.
 
 ## Quick start from source
 
-Requirements: Python 3.10+, Microsoft Edge or Chromium, and a local Codex CLI
-when using the default AI backend.
+Requirements: Python 3.10+, Microsoft Edge or Chromium, and either a local
+Codex CLI (the default backend) or an OpenAI-compatible API key.
 
 ```powershell
-cd F:\LinkedIn-AutoApply\open-source-framework
+$ProjectRoot = "C:\path\to\linkedin-autoapply"
+Set-Location $ProjectRoot
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e .[dev]
@@ -89,13 +90,50 @@ user's environment and is never written to `config.yaml`.
 Build the portable directory from a Windows PowerShell prompt:
 
 ```powershell
-cd F:\LinkedIn-AutoApply\open-source-framework
+$ProjectRoot = "C:\path\to\linkedin-autoapply"
+Set-Location $ProjectRoot
 pip install -e .[dev]
 .\build_exe.ps1
 ```
 
 Double-click `dist\LinkedInAutoApply\LinkedInAutoApply.exe`. The worker
 executable is placed beside it by the build script.
+
+## Beginner first-run checklist
+
+1. Install Python, Edge/Chromium, and Codex CLI, or prepare an
+   OpenAI-compatible API endpoint.
+2. Copy `config.example.yaml` to `config.yaml`, or open the desktop control
+   panel and select your resume. The resume is required when starting a run;
+   other console fields may be left blank while saving.
+3. In **Console**, enter search keywords and a location. Choose a posting-age
+   window (24 hours, 1 week, 2 weeks, or 1 month), review the score threshold,
+   and keep keyword optimization enabled if you want the active list to adapt.
+4. In **Model Configuration**, select Local Codex or API. In API mode, set the
+   base URL, model name, and the environment-variable name that contains your
+   key; never paste the key into the repository or YAML file.
+5. Click **Save model configuration** on the model page, then return to
+   **Console** and save the run settings. Saving the two pages is independent.
+6. Run `python -m linkedin_autoapply doctor` (or **Check environment** in the
+   GUI). Fix missing dependencies before starting.
+7. Click **Start**. On the first run, a visible LinkedIn window opens if no
+   authenticated session is available. Complete login, SSO, CAPTCHA, or 2FA
+   yourself; the program never reads or stores those credentials.
+8. Watch the live log. Confirmed applications are recorded locally. CAPTCHA,
+   login/registration, unknown answers, and unconfirmed submissions are kept
+   for manual handling rather than being reported as successful.
+
+For a non-submitting smoke test, enable **Preview only; do not submit** or add
+`--dry-run` to the CLI command.
+
+## Platform support
+
+The packaged EXE and the reproducible build script are Windows-only. The
+current end-to-end workflow also assumes Windows Edge/CDP behavior, PowerShell
+process supervision, and Windows window handling for human handoff. The
+Python modules are not deliberately marketed as cross-platform yet; a
+macOS/Linux port would need platform-specific browser, process, and packaging
+work before it should be considered supported.
 
 ### First run and LinkedIn login
 
