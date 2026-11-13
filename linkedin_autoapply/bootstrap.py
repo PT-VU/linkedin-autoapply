@@ -24,6 +24,7 @@ class BootstrapResult:
     browser: str
     codex_path: str
     message: str
+    needs_download: bool = False
 
 
 def _edge_candidates() -> list[Path]:
@@ -93,7 +94,12 @@ def _install_chromium(log: Callable[[str], None]) -> tuple[bool, str]:
         return False, f"Chromium download failed: {exc}"
 
 
-def ensure_runtime(project_root: Path, log: Callable[[str], None] | None = None) -> BootstrapResult:
+def ensure_runtime(
+    project_root: Path,
+    log: Callable[[str], None] | None = None,
+    *,
+    allow_download: bool = False,
+) -> BootstrapResult:
     """Prepare local directories and ensure a usable browser is available."""
 
     emit = log or (lambda _message: None)
@@ -112,6 +118,14 @@ def ensure_runtime(project_root: Path, log: Callable[[str], None] | None = None)
         return BootstrapResult(False, "", str(codex or ""), f"Playwright browser check failed: {exc}")
 
     if not chromium.is_file():
+        if not allow_download:
+            return BootstrapResult(
+                False,
+                "",
+                str(codex or ""),
+                "Playwright Chromium is not installed",
+                needs_download=True,
+            )
         installed, message = _install_chromium(emit)
         if not installed:
             return BootstrapResult(False, "", str(codex or ""), message)

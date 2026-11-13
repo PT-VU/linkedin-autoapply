@@ -77,6 +77,8 @@ TRANSLATIONS = {
         "rubric_tooltip": "AI rubric: (1) skills and responsibilities match, (2) alignment with the user's career direction and growth plan, (3) practical fit such as language, location, work authorization, seniority, and other stated constraints. The AI must cite JD evidence and must not invent candidate facts.",
         "check_started": "Checking environment...",
         "check_failed": "Environment check failed: {error}",
+        "browser_download_title": "Browser download required",
+        "browser_download_prompt": "Microsoft Edge is unavailable. Download Playwright Chromium now? This may download a large browser package.",
     },
     "zh": {
         "title": "LinkedIn 自动投递",
@@ -132,6 +134,8 @@ TRANSLATIONS = {
         "rubric_tooltip": "AI 评分 rubric：1）技能与岗位职责匹配度；2）与用户职业方向和发展规划的匹配度；3）语言、地区、工作许可、岗位级别及其他已声明现实条件的匹配度。AI 必须引用 JD 证据，不能编造候选人信息。",
         "check_started": "正在检查环境……",
         "check_failed": "环境检查失败：{error}",
+        "browser_download_title": "需要下载浏览器",
+        "browser_download_prompt": "未检测到 Microsoft Edge。现在下载 Playwright Chromium 吗？这可能需要下载较大的浏览器文件。",
     },
 }
 
@@ -619,7 +623,28 @@ class AutoApplyWindow:
     def _bootstrap_worker(self):
         result = ensure_runtime(ROOT, log=lambda message: self.output_queue.put(("line", message + "\n")))
         self.bootstrap_result = result
+        self.output_queue.put(("bootstrap_probe_done", ""))
+
+    def _bootstrap_install_worker(self):
+        result = ensure_runtime(
+            ROOT,
+            log=lambda message: self.output_queue.put(("line", message + "\n")),
+            allow_download=True,
+        )
+        self.bootstrap_result = result
         self.output_queue.put(("bootstrap_done", ""))
+
+    def _prompt_browser_download(self):
+        result = self.bootstrap_result
+        if not result or not result.needs_download:
+            return
+        approved = messagebox.askyesno(self.t("browser_download_title"), self.t("browser_download_prompt"), parent=self.root)
+        if not approved:
+            self.status.set(self.t("check_failed").format(error="Browser download was declined"))
+            self._append("[bootstrap] Browser download declined; Start remains disabled.\n")
+            return
+        self._append("[bootstrap] Download approved; preparing Chromium...\n")
+        threading.Thread(target=self._bootstrap_install_worker, daemon=True).start()
 
     def stop(self):
         if self.process and self.process.poll() is None:
@@ -639,7 +664,20 @@ class AutoApplyWindow:
         try:
             while True:
                 kind, payload = self.output_queue.get_nowait()
-                if kind == "bootstrap_done":
+                if kind == "bootstrap_probe_done":
+                    result = self.bootstrap_result
+                    if result and result.ok:
+                        self.runtime_ready = True
+                        self.start_button.state(["!disabled"])
+                        self.status.set(self.t("status_idle"))
+                        self._append("[bootstrap] Runtime ready.\n")
+                    elif result and result.needs_download:
+                        self._prompt_browser_download()
+                    else:
+                        detail = result.message if result else "unknown bootstrap error"
+                        self.status.set(self.t("check_failed").format(error=detail))
+                        self._append(f"[bootstrap] {detail}\n")
+                elif kind == "bootstrap_done":
                     result = self.bootstrap_result
                     self.runtime_ready = bool(result and result.ok)
                     if self.runtime_ready:
