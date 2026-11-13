@@ -365,11 +365,13 @@ class AutoApplyWindow:
 
         codex_row = ttk.Frame(page)
         codex_row.pack(fill="x", padx=14, pady=4)
+        self.codex_model_frame = codex_row
         self._label(codex_row, "codex_model", width=28).pack(side="left")
         self.codex_model_box = ttk.Combobox(codex_row, textvariable=self.ai_model, values=self.codex_models, state="normal")
         self.codex_model_box.pack(side="left", fill="x", expand=True)
         self._button(codex_row, "refresh_models", self._refresh_codex_models).pack(side="left", padx=6)
-        self._label(page, "model_source").pack(anchor="w", padx=14, pady=(0, 8))
+        self.model_source_label = self._label(page, "model_source")
+        self.model_source_label.pack(anchor="w", padx=14, pady=(0, 8))
 
         self.api_settings_frame = ttk.Frame(page)
         self.api_settings_frame.pack(fill="x")
@@ -398,15 +400,16 @@ class AutoApplyWindow:
         self._set_api_visibility()
 
     def _set_api_visibility(self):
-        frame = getattr(self, "api_settings_frame", None)
-        if frame is None:
+        api_frame = getattr(self, "api_settings_frame", None)
+        codex_frame = getattr(self, "codex_model_frame", None)
+        if api_frame is None or codex_frame is None:
             return
-        frame.pack_forget()
+        api_frame.pack_forget()
+        codex_frame.pack_forget()
         if self.ai_backend.get() == "api":
-            # Reinsert immediately before the Save button. The page is small,
-            # so a stable dedicated container avoids showing API fields in
-            # local-Codex mode and keeps the layout predictable.
-            frame.pack(fill="x", before=getattr(self, "model_save_button", None))
+            api_frame.pack(fill="x", before=getattr(self, "model_save_button", None))
+        else:
+            codex_frame.pack(fill="x", before=getattr(self, "model_source_label", None))
 
     def _refresh_codex_models(self):
         self.codex_models = discover_codex_models()
