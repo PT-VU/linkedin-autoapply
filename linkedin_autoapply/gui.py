@@ -46,6 +46,7 @@ TRANSLATIONS = {
         "external_apply": "External Apply (experimental)",
         "dry_run": "Preview only; do not submit",
         "save": "Save configuration",
+        "save_model": "Save model configuration",
         "save_notes": "Save additional information",
         "start": "Start",
         "stop": "Stop",
@@ -100,6 +101,7 @@ TRANSLATIONS = {
         "external_apply": "External Apply（实验）",
         "dry_run": "仅预览，不提交",
         "save": "保存配置",
+        "save_model": "保存模型配置",
         "save_notes": "保存补充信息",
         "start": "开始运行",
         "stop": "停止运行",
@@ -413,7 +415,7 @@ class AutoApplyWindow:
         self._row(self.api_settings_frame, "api_model", self.api_model)
         self._row(self.api_settings_frame, "api_key_env", self.api_key_env)
         self._checkbutton(self.api_settings_frame, "api_json_mode", self.api_json_mode).pack(anchor="w", padx=14, pady=4)
-        self.model_save_button = self._button(page, "save", self.save)
+        self.model_save_button = self._button(page, "save_model", self.save_model_config)
         self.model_save_button.pack(anchor="w", padx=14, pady=10)
         self._set_api_visibility()
 
@@ -513,12 +515,32 @@ class AutoApplyWindow:
         if value:
             variable.set(value)
 
-    def save(self):
+    def _update_ai_config(self, data: dict[str, Any]) -> None:
+        ai = data.setdefault("ai", {})
+        ai["backend"] = "api" if self.ai_backend.get() == "api" else "codex"
+        ai["model"] = self.api_model.get().strip() if ai["backend"] == "api" else self.ai_model.get().strip()
+        ai["base_url"] = self.api_base_url.get().strip()
+        ai["api_key_env"] = self.api_key_env.get().strip() or "OPENAI_API_KEY"
+        ai["json_mode"] = bool(self.api_json_mode.get())
+
+    def save_model_config(self):
+        try:
+            data = _load_config()
+            self._update_ai_config(data)
+            _save_config(data)
+            self.status.set(self.t("model_saved"))
+            return True
+        except Exception as exc:
+            messagebox.showerror(self.t("save_failed"), str(exc))
+            return False
+
+    def save(self, require_resume: bool = False):
         try:
             data = _load_config()
             resume_source = self.resume.get().strip()
-            resume_path = _copy_user_file(resume_source, "Resume") if resume_source else ""
-            if not resume_path:
+            existing_resume_path = str((data.get("resume") or {}).get("path") or "")
+            resume_path = _copy_user_file(resume_source, "Resume") if resume_source else existing_resume_path
+            if require_resume and (not resume_path or not _display_path(resume_path)):
                 raise ValueError(self.t("resume_required"))
 
             search = data.setdefault("search", {})
@@ -540,12 +562,7 @@ class AutoApplyWindow:
             data.setdefault("cover_letter", {})["template_path"] = _copy_user_file(self.cover_template.get().strip(), "Cover Letter template") if self.cover_template.get().strip() else ""
             data.setdefault("profile", {})["notes"] = self.notes.get("1.0", "end").strip()
             data.setdefault("ui", {})["language"] = self.language.get()
-            ai = data.setdefault("ai", {})
-            ai["backend"] = "api" if self.ai_backend.get() == "api" else "codex"
-            ai["model"] = self.api_model.get().strip() if ai["backend"] == "api" else self.ai_model.get().strip()
-            ai["base_url"] = self.api_base_url.get().strip()
-            ai["api_key_env"] = self.api_key_env.get().strip() or "OPENAI_API_KEY"
-            ai["json_mode"] = bool(self.api_json_mode.get())
+            self._update_ai_config(data)
             _save_config(data)
             self.status.set(self.t("saved_path").format(path=CONFIG_PATH))
             return True
@@ -562,7 +579,7 @@ class AutoApplyWindow:
     def start(self):
         if self.process and self.process.poll() is None:
             return
-        if not self.save() or not CONFIG_PATH.exists():
+        if not self.save(require_resume=True) or not CONFIG_PATH.exists():
             return
         max_pages = self.max_pages.get().strip() or "0"
         if getattr(sys, "frozen", False):
