@@ -48,6 +48,7 @@ TRANSLATIONS = {
         "start": "Start",
         "stop": "Stop",
         "doctor": "Check environment",
+        "console": "Console",
         "model_settings": "⚙ Model Configuration",
         "model_backend": "AI backend",
         "backend_codex": "Local Codex CLI",
@@ -99,6 +100,7 @@ TRANSLATIONS = {
         "start": "开始运行",
         "stop": "停止运行",
         "doctor": "检查环境",
+        "console": "控制台",
         "model_settings": "⚙ 模型配置",
         "model_backend": "AI 后端",
         "backend_codex": "本地 Codex CLI",
@@ -279,6 +281,7 @@ class AutoApplyWindow:
         sidebar = ttk.Frame(body, width=210)
         sidebar.pack(side="left", fill="y", padx=(10, 4), pady=10)
         sidebar.pack_propagate(False)
+        self._button(sidebar, "console", lambda: self._show_page("main")).pack(fill="x", pady=4)
         self._button(sidebar, "model_settings", lambda: self._show_page("model")).pack(fill="x", pady=4)
 
         self.page_container = ttk.Frame(body)
