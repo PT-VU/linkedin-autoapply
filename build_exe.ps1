@@ -1,5 +1,16 @@
 $ErrorActionPreference = "Stop"
 
+# Never let PyInstaller clean the live package while the GUI is running. A
+# failed cleanup can leave a partially populated _internal directory (notably
+# missing Tcl/Tk files) and make the next launch fail before Python starts.
+$guiExePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "dist\LinkedInAutoApply\LinkedInAutoApply.exe"))
+$runningGui = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+  $_.ExecutablePath -and ([System.IO.Path]::GetFullPath($_.ExecutablePath) -ieq $guiExePath)
+}
+if ($runningGui) {
+  throw "Close the running LinkedInAutoApply GUI before rebuilding: $guiExePath"
+}
+
 $python = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python)) {
   $python = "python"
