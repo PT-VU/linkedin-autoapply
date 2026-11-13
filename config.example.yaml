@@ -33,7 +33,7 @@ search:
   max_pages: 0
 
   keyword_expansion:
-    enabled: false
+    enabled: true
     target_count: 10
     candidate_keywords: []
 

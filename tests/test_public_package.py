@@ -15,7 +15,7 @@ def test_example_configuration_is_parseable_and_external_is_explicitly_experimen
     assert config["cover_letter"]["external_session_id"] == ""
     assert str(config["resume"]["path"]).startswith("user_files/")
     assert config["search"]["max_pages"] == 0
-    assert config["search"]["keyword_expansion"]["enabled"] is False
+    assert config["search"]["keyword_expansion"]["enabled"] is True
     assert config["linkedin"]["auth"]["interactive_login"] is True
     assert config["linkedin"]["auth"]["login_timeout_seconds"] == 300
 

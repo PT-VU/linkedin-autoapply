@@ -32,6 +32,8 @@ TRANSLATIONS = {
         "threshold": "AI score threshold (out of 10)",
         "keyword_count": "Target keyword count",
         "expand_keywords": "Let AI expand and optimize keywords",
+        "easy_apply_tooltip": "When enabled, the app processes LinkedIn Easy Apply forms automatically. When disabled, Easy Apply jobs are skipped.",
+        "external_apply_tooltip": "When enabled, the app processes external application pages experimentally. Login, registration, CAPTCHA, or uncertain pages may require manual handling.",
         "search_settings": "Search and scoring",
         "files": "Application files",
         "resume": "Resume *",
@@ -84,6 +86,8 @@ TRANSLATIONS = {
         "threshold": "AI 评分阈值（总分为10）",
         "keyword_count": "目标关键词数量",
         "expand_keywords": "允许 AI 自主扩展和优化关键词",
+        "easy_apply_tooltip": "勾选后，程序会自动处理 LinkedIn Easy Apply 表单；取消勾选则跳过 Easy Apply 岗位。",
+        "external_apply_tooltip": "勾选后，程序会尝试处理外部申请页面；登录、注册、验证码或无法确认的页面可能需要人工处理。",
         "search_settings": "搜索与评分",
         "files": "投递文件",
         "resume": "简历 *",
@@ -236,7 +240,7 @@ class AutoApplyWindow:
         self.additional_info = str(profile.get("notes") or "")
         self.easy_apply = tk.BooleanVar(value=bool(apply.get("easy_apply", True)))
         self.external_apply = tk.BooleanVar(value=bool(apply.get("external_apply", True)))
-        self.expand_keywords = tk.BooleanVar(value=bool(expansion.get("enabled", False)))
+        self.expand_keywords = tk.BooleanVar(value=bool(expansion.get("enabled", True)))
         self.dry_run = tk.BooleanVar(value=False)
         backend = str(ai.get("backend") or "codex").strip().lower()
         self.ai_backend = tk.StringVar(value="api" if backend in {"api", "openai", "openai_compatible"} else "codex")
@@ -351,7 +355,9 @@ class AutoApplyWindow:
         toggles = ttk.Frame(main)
         toggles.pack(fill="x", padx=14, pady=4)
         self._checkbutton(toggles, "easy_apply", self.easy_apply).pack(side="left")
-        self._checkbutton(toggles, "external_apply", self.external_apply).pack(side="left", padx=22)
+        self._info_icon(toggles, "easy_apply_tooltip")
+        self._checkbutton(toggles, "external_apply", self.external_apply).pack(side="left", padx=(22, 0))
+        self._info_icon(toggles, "external_apply_tooltip")
         self._checkbutton(toggles, "dry_run", self.dry_run).pack(side="left", padx=22)
 
         buttons = ttk.Frame(main)
@@ -463,6 +469,13 @@ class AutoApplyWindow:
         self.language.set("zh" if self.language_display.get() == "中文" else "en")
         self._apply_language()
 
+    def _info_icon(self, parent, tooltip_key: str):
+        info = ttk.Label(parent, text="ⓘ", cursor="question_arrow")
+        info.pack(side="left", padx=(4, 0))
+        info.bind("<Enter>", lambda _event: self._show_tooltip(info, tooltip_key))
+        info.bind("<Leave>", lambda _event: self._hide_rubric())
+        return info
+
     def _refresh_date_posted_options(self):
         labels = [DATE_POSTED_LABELS[self.language.get()][value] for value in DATE_POSTED_VALUES]
         self.date_posted_box.configure(values=labels)
@@ -478,11 +491,14 @@ class AutoApplyWindow:
         self.date_posted.set(next((value for value, label in labels.items() if label == selected), "Past 24 hours"))
 
     def _show_rubric(self, anchor):
+        self._show_tooltip(anchor, "rubric_tooltip")
+
+    def _show_tooltip(self, anchor, key: str):
         self._hide_rubric()
         self.rubric_popup = tk.Toplevel(self.root)
         self.rubric_popup.wm_overrideredirect(True)
         self.rubric_popup.attributes("-topmost", True)
-        label = tk.Label(self.rubric_popup, text=self.t("rubric_tooltip"), justify="left", wraplength=420, bg="#fffde6", relief="solid", borderwidth=1, padx=8, pady=8)
+        label = tk.Label(self.rubric_popup, text=self.t(key), justify="left", wraplength=420, bg="#fffde6", relief="solid", borderwidth=1, padx=8, pady=8)
         label.pack()
         self.rubric_popup.geometry(f"+{anchor.winfo_rootx()+18}+{anchor.winfo_rooty()+18}")
 
