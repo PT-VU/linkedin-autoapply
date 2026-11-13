@@ -16,9 +16,10 @@ if (-not (Test-Path -LiteralPath $python)) {
   $python = "python"
 }
 
+$includeLocalConfig = $env:LINKEDIN_AUTOAPPLY_INCLUDE_LOCAL_CONFIG -eq "1"
 $projectConfig = Join-Path $PSScriptRoot "config.yaml"
 $portableConfig = Join-Path $PSScriptRoot "dist\LinkedInAutoApply\config.yaml"
-if (-not (Test-Path -LiteralPath $projectConfig) -and (Test-Path -LiteralPath $portableConfig)) {
+if ($includeLocalConfig -and -not (Test-Path -LiteralPath $projectConfig) -and (Test-Path -LiteralPath $portableConfig)) {
   Copy-Item -Force $portableConfig $projectConfig
 }
 
@@ -47,7 +48,7 @@ $commonArgs = @(
 
 Copy-Item -Recurse -Force dist\LinkedInAutoApplyWorker\* dist\LinkedInAutoApply\
 Copy-Item -Force config.example.yaml dist\LinkedInAutoApply\config.example.yaml
-if (Test-Path -LiteralPath $projectConfig) {
+if ($includeLocalConfig -and (Test-Path -LiteralPath $projectConfig)) {
   Copy-Item -Force $projectConfig dist\LinkedInAutoApply\config.yaml
 }
 New-Item -ItemType Directory -Force dist\LinkedInAutoApply\user_files | Out-Null

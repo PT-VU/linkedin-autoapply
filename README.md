@@ -96,6 +96,11 @@ pip install -e .[dev]
 .\build_exe.ps1
 ```
 
+The build copies only `config.example.yaml` by default, so local resumes,
+locations, and profile settings are not embedded in the portable directory.
+To intentionally carry an existing local configuration into a private build,
+set `LINKEDIN_AUTOAPPLY_INCLUDE_LOCAL_CONFIG=1` before running the script.
+
 Double-click `dist\LinkedInAutoApply\LinkedInAutoApply.exe`. The worker
 executable is placed beside it by the build script.
 
