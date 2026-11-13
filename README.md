@@ -80,6 +80,13 @@ The small Tk control panel exposes the settings most users need:
 - resume, cover-letter template, and job-requirements file selection;
 - start, stop, environment check, and live log output.
 
+On EXE startup, the launcher creates the local runtime directories and checks
+for a usable browser. Installed Microsoft Edge is preferred; if Edge is not
+available, Playwright Chromium is downloaded to the user's Playwright cache
+and the workflow falls back to it. Python dependencies are already inside the
+portable package. Codex installation/login and LinkedIn authentication remain
+user-provided because they are account credentials, not package dependencies.
+
 The left-side gear tab, **Model Configuration**, reads visible model slugs from
 the local Codex model catalog/config and lets the user choose the Codex model.
 The same tab configures an OpenAI-compatible API backend, including base URL,

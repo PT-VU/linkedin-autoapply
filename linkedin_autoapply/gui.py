@@ -18,6 +18,7 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
+from .bootstrap import BootstrapResult, ensure_runtime
 from .codex_models import discover_codex_models
 
 
@@ -211,7 +212,9 @@ class AutoApplyWindow:
         self.root.geometry("1180x900")
         self.root.minsize(980, 720)
         self.process: subprocess.Popen[str] | None = None
-        self.output_queue: queue.Queue[str] = queue.Queue()
+        self.output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
+        self.runtime_ready = False
+        self.bootstrap_result: BootstrapResult | None = None
         self.text_bindings: list[tuple[tk.StringVar, str]] = []
         config = _load_config()
         search = config.get("search") or {}
@@ -254,6 +257,7 @@ class AutoApplyWindow:
         self.api_json_mode = tk.BooleanVar(value=bool(ai.get("json_mode", False)))
         self._build()
         self._apply_language()
+        self._start_bootstrap()
         self._poll_output()
 
     def t(self, key: str) -> str:
@@ -365,7 +369,9 @@ class AutoApplyWindow:
         buttons = ttk.Frame(main)
         buttons.pack(fill="x", padx=14, pady=8)
         self._button(buttons, "save", self.save).pack(side="left")
-        self._button(buttons, "start", self.start).pack(side="left", padx=8)
+        self.start_button = self._button(buttons, "start", self.start)
+        self.start_button.pack(side="left", padx=8)
+        self.start_button.state(["disabled"])
         self._button(buttons, "stop", self.stop).pack(side="left")
         self._button(buttons, "doctor", self.doctor).pack(side="right")
 
@@ -579,6 +585,9 @@ class AutoApplyWindow:
     def start(self):
         if self.process and self.process.poll() is None:
             return
+        if not self.runtime_ready:
+            self._append("[bootstrap] Runtime is still preparing or is not ready.\n")
+            return
         if not self.save(require_resume=True) or not CONFIG_PATH.exists():
             return
         max_pages = self.max_pages.get().strip() or "0"
@@ -600,8 +609,17 @@ class AutoApplyWindow:
     def _read_process(self):
         assert self.process and self.process.stdout
         for line in self.process.stdout:
-            self.output_queue.put(line)
-        self.output_queue.put("[launcher] worker exited\n")
+            self.output_queue.put(("line", line))
+        self.output_queue.put(("line", "[launcher] worker exited\n"))
+
+    def _start_bootstrap(self):
+        self._append("[bootstrap] Checking local runtime...\n")
+        threading.Thread(target=self._bootstrap_worker, daemon=True).start()
+
+    def _bootstrap_worker(self):
+        result = ensure_runtime(ROOT, log=lambda message: self.output_queue.put(("line", message + "\n")))
+        self.bootstrap_result = result
+        self.output_queue.put(("bootstrap_done", ""))
 
     def stop(self):
         if self.process and self.process.poll() is None:
@@ -620,7 +638,20 @@ class AutoApplyWindow:
     def _poll_output(self):
         try:
             while True:
-                self._append(self.output_queue.get_nowait())
+                kind, payload = self.output_queue.get_nowait()
+                if kind == "bootstrap_done":
+                    result = self.bootstrap_result
+                    self.runtime_ready = bool(result and result.ok)
+                    if self.runtime_ready:
+                        self.start_button.state(["!disabled"])
+                        self.status.set(self.t("status_idle"))
+                        self._append("[bootstrap] Runtime ready.\n")
+                    else:
+                        detail = result.message if result else "unknown bootstrap error"
+                        self.status.set(self.t("check_failed").format(error=detail))
+                        self._append(f"[bootstrap] {detail}\n")
+                else:
+                    self._append(payload)
         except queue.Empty:
             pass
         if self.process and self.process.poll() is not None:

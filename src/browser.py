@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import shutil
 from typing import Optional
 
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
@@ -15,6 +16,16 @@ logger = logging.getLogger("linkedin_autoapply.browser")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 COOKIE_FILE = PROJECT_ROOT / "data" / "linkedin_cookies.json"
+
+
+def _edge_available() -> bool:
+    candidates = [shutil.which("msedge"), shutil.which("msedge.exe")]
+    if os.name == "nt":
+        for variable in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
+            base = os.environ.get(variable)
+            if base:
+                candidates.append(str(Path(base) / "Microsoft" / "Edge" / "Application" / "msedge.exe"))
+    return any(candidate and Path(candidate).is_file() for candidate in candidates)
 
 
 def launch_browser(
@@ -45,15 +56,21 @@ def launch_browser(
 
     # 使用 launch() 而非 launch_persistent_context()
     # 避免 BUG-001: 与已运行的 Edge 进程冲突
-    browser = pw.chromium.launch(
-        headless=headless,
-        channel=channel,
-        slow_mo=slow_mo,
-        args=[
+    requested_channel = str(channel or "").strip()
+    if requested_channel.casefold() in {"msedge", "edge"} and not _edge_available():
+        logger.warning("Microsoft Edge is unavailable; falling back to Playwright Chromium")
+        requested_channel = ""
+    launch_options = {
+        "headless": headless,
+        "slow_mo": slow_mo,
+        "args": [
             "--disable-blink-features=AutomationControlled",  # 隐藏自动化标志
             "--no-sandbox",
         ],
-    )
+    }
+    if requested_channel:
+        launch_options["channel"] = requested_channel
+    browser = pw.chromium.launch(**launch_options)
 
     context = browser.new_context(
         viewport={"width": 1280, "height": 900},
