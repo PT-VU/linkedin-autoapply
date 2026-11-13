@@ -259,6 +259,7 @@ class AutoApplyWindow:
         ttk.Entry(frame, textvariable=variable).pack(side="left", fill="x", expand=True)
         if browse:
             ttk.Button(frame, text="…", width=4, command=lambda: self._choose(variable, filetypes)).pack(side="left", padx=6)
+        return frame
 
     def _section(self, parent, key: str):
         ttk.Separator(parent).pack(fill="x", padx=14, pady=8)
@@ -370,11 +371,15 @@ class AutoApplyWindow:
         self._button(codex_row, "refresh_models", self._refresh_codex_models).pack(side="left", padx=6)
         self._label(page, "model_source").pack(anchor="w", padx=14, pady=(0, 8))
 
-        self._row(page, "api_base_url", self.api_base_url)
-        self._row(page, "api_model", self.api_model)
-        self._row(page, "api_key_env", self.api_key_env)
-        self._checkbutton(page, "api_json_mode", self.api_json_mode).pack(anchor="w", padx=14, pady=4)
-        self._button(page, "save", self.save).pack(anchor="w", padx=14, pady=10)
+        self.api_settings_frame = ttk.Frame(page)
+        self.api_settings_frame.pack(fill="x")
+        self._row(self.api_settings_frame, "api_base_url", self.api_base_url)
+        self._row(self.api_settings_frame, "api_model", self.api_model)
+        self._row(self.api_settings_frame, "api_key_env", self.api_key_env)
+        self._checkbutton(self.api_settings_frame, "api_json_mode", self.api_json_mode).pack(anchor="w", padx=14, pady=4)
+        self.model_save_button = self._button(page, "save", self.save)
+        self.model_save_button.pack(anchor="w", padx=14, pady=10)
+        self._set_api_visibility()
 
     def _show_page(self, name: str):
         for page_name, page in (("main", getattr(self, "main_page", None)), ("model", getattr(self, "model_page", None))):
@@ -390,6 +395,18 @@ class AutoApplyWindow:
             self.ai_backend.set("api")
         else:
             self.ai_backend.set("codex")
+        self._set_api_visibility()
+
+    def _set_api_visibility(self):
+        frame = getattr(self, "api_settings_frame", None)
+        if frame is None:
+            return
+        frame.pack_forget()
+        if self.ai_backend.get() == "api":
+            # Reinsert immediately before the Save button. The page is small,
+            # so a stable dedicated container avoids showing API fields in
+            # local-Codex mode and keeps the layout predictable.
+            frame.pack(fill="x", before=getattr(self, "model_save_button", None))
 
     def _refresh_codex_models(self):
         self.codex_models = discover_codex_models()
@@ -405,6 +422,7 @@ class AutoApplyWindow:
         if hasattr(self, "backend_box"):
             self.backend_box.configure(values=[self.t("backend_codex"), self.t("backend_api")])
             self.backend_box.set(self.t("backend_api") if self.ai_backend.get() == "api" else self.t("backend_codex"))
+            self._set_api_visibility()
         if hasattr(self, "status") and not self.process:
             self.status.set(self.t("status_idle"))
 
