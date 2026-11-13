@@ -17,6 +17,12 @@ For a new user, leave `ai.model` empty when using Codex. This allows the local
 Codex installation to select a supported model instead of making the public
 project depend on one machine-specific model name.
 
+The desktop gear tab reads the local Codex model catalog when it is available.
+If the catalog is unavailable, it still shows the model from the local Codex
+config or the inherited-default option. API mode uses `base_url`, `model`,
+`api_key_env`, and optional `json_mode`. Put the secret in the named
+environment variable rather than in YAML.
+
 Keyword feedback is rolling: each run records usable JD and match-rate data.
 When expansion is enabled, the active list is extended toward
 `keyword_expansion.target_count` using the configured candidate pool, while

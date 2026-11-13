@@ -18,6 +18,8 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
+from .codex_models import discover_codex_models
+
 
 TRANSLATIONS = {
     "en": {
@@ -46,6 +48,18 @@ TRANSLATIONS = {
         "start": "Start",
         "stop": "Stop",
         "doctor": "Check environment",
+        "model_settings": "⚙ Model Configuration",
+        "model_backend": "AI backend",
+        "backend_codex": "Local Codex CLI",
+        "backend_api": "OpenAI-compatible API",
+        "codex_model": "Codex model",
+        "refresh_models": "Refresh Codex models",
+        "model_source": "Models are read from the local Codex catalog/config. The app never sends credentials to discover them.",
+        "api_base_url": "API base URL",
+        "api_model": "API model",
+        "api_key_env": "API key environment variable",
+        "api_json_mode": "Request JSON response mode",
+        "model_saved": "Model configuration saved",
         "log": "Live run log",
         "status_idle": "Idle",
         "status_running": "Running",
@@ -85,6 +99,18 @@ TRANSLATIONS = {
         "start": "开始运行",
         "stop": "停止运行",
         "doctor": "检查环境",
+        "model_settings": "⚙ 模型配置",
+        "model_backend": "AI 后端",
+        "backend_codex": "本地 Codex CLI",
+        "backend_api": "OpenAI 兼容 API",
+        "codex_model": "Codex 模型",
+        "refresh_models": "刷新 Codex 模型列表",
+        "model_source": "模型列表读取自本地 Codex catalog/config。应用不会发送凭据来获取模型列表。",
+        "api_base_url": "API 基础地址",
+        "api_model": "API 模型",
+        "api_key_env": "API Key 环境变量名",
+        "api_json_mode": "请求 JSON 响应模式",
+        "model_saved": "模型配置已保存",
         "log": "实时运行日志",
         "status_idle": "未运行",
         "status_running": "运行中",
@@ -172,6 +198,7 @@ class AutoApplyWindow:
         cover = config.get("cover_letter") or {}
         profile = config.get("profile") or {}
         ui = config.get("ui") or {}
+        ai = config.get("ai") or {}
 
         self.language = tk.StringVar(value=str(ui.get("language") or "en").lower() if str(ui.get("language") or "en").lower() in TRANSLATIONS else "en")
         self.language_display = tk.StringVar(value="English" if self.language.get() == "en" else "中文")
@@ -190,6 +217,14 @@ class AutoApplyWindow:
         self.external_apply = tk.BooleanVar(value=bool(apply.get("external_apply", True)))
         self.expand_keywords = tk.BooleanVar(value=bool(expansion.get("enabled", False)))
         self.dry_run = tk.BooleanVar(value=False)
+        backend = str(ai.get("backend") or "codex").strip().lower()
+        self.ai_backend = tk.StringVar(value="api" if backend in {"api", "openai", "openai_compatible"} else "codex")
+        self.codex_models = discover_codex_models()
+        self.ai_model = tk.StringVar(value=str(ai.get("model") or ""))
+        self.api_model = tk.StringVar(value=str(ai.get("model") or ""))
+        self.api_base_url = tk.StringVar(value=str(ai.get("base_url") or ""))
+        self.api_key_env = tk.StringVar(value=str(ai.get("api_key_env") or "OPENAI_API_KEY"))
+        self.api_json_mode = tk.BooleanVar(value=bool(ai.get("json_mode", False)))
         self._build()
         self._apply_language()
         self._poll_output()
@@ -238,8 +273,18 @@ class AutoApplyWindow:
         language_box.pack(side="right", padx=8)
         language_box.bind("<<ComboboxSelected>>", self._on_language_selected)
 
-        main = ttk.Frame(self.root)
+        body = ttk.Frame(self.root)
+        body.pack(fill="both", expand=True)
+        sidebar = ttk.Frame(body, width=210)
+        sidebar.pack(side="left", fill="y", padx=(10, 4), pady=10)
+        sidebar.pack_propagate(False)
+        self._button(sidebar, "model_settings", lambda: self._show_page("model")).pack(fill="x", pady=4)
+
+        self.page_container = ttk.Frame(body)
+        self.page_container.pack(side="left", fill="both", expand=True, padx=(4, 14), pady=10)
+        main = ttk.Frame(self.page_container)
         main.pack(fill="both", expand=True)
+        self.main_page = main
         self._section(main, "search_settings")
         self._row(main, "keywords", self.keywords)
         self._row(main, "location", self.location)
@@ -298,10 +343,68 @@ class AutoApplyWindow:
         scrollbar.pack(side="right", fill="y")
         self.output.configure(yscrollcommand=scrollbar.set)
 
+        self.model_page = ttk.Frame(self.page_container)
+        self._build_model_page()
+        self._show_page("main")
+
+    def _build_model_page(self):
+        page = self.model_page
+        self._section(page, "model_settings")
+        backend_row = ttk.Frame(page)
+        backend_row.pack(fill="x", padx=14, pady=4)
+        self._label(backend_row, "model_backend", width=28).pack(side="left")
+        self.backend_box = ttk.Combobox(
+            backend_row,
+            textvariable=self.ai_backend,
+            state="readonly",
+            values=[self.t("backend_codex"), self.t("backend_api")],
+        )
+        self.backend_box.pack(side="left", fill="x", expand=True)
+        self.backend_box.bind("<<ComboboxSelected>>", lambda _event: self._on_backend_changed())
+
+        codex_row = ttk.Frame(page)
+        codex_row.pack(fill="x", padx=14, pady=4)
+        self._label(codex_row, "codex_model", width=28).pack(side="left")
+        self.codex_model_box = ttk.Combobox(codex_row, textvariable=self.ai_model, values=self.codex_models, state="normal")
+        self.codex_model_box.pack(side="left", fill="x", expand=True)
+        self._button(codex_row, "refresh_models", self._refresh_codex_models).pack(side="left", padx=6)
+        self._label(page, "model_source").pack(anchor="w", padx=14, pady=(0, 8))
+
+        self._row(page, "api_base_url", self.api_base_url)
+        self._row(page, "api_model", self.api_model)
+        self._row(page, "api_key_env", self.api_key_env)
+        self._checkbutton(page, "api_json_mode", self.api_json_mode).pack(anchor="w", padx=14, pady=4)
+        self._button(page, "save", self.save).pack(anchor="w", padx=14, pady=10)
+
+    def _show_page(self, name: str):
+        for page_name, page in (("main", getattr(self, "main_page", None)), ("model", getattr(self, "model_page", None))):
+            if page is None:
+                continue
+            page.pack_forget()
+            if page_name == name:
+                page.pack(fill="both", expand=True)
+
+    def _on_backend_changed(self):
+        selected = self.backend_box.get()
+        if selected == self.t("backend_api"):
+            self.ai_backend.set("api")
+        else:
+            self.ai_backend.set("codex")
+
+    def _refresh_codex_models(self):
+        self.codex_models = discover_codex_models()
+        self.codex_model_box.configure(values=self.codex_models)
+        if self.codex_models and not self.ai_model.get().strip():
+            self.ai_model.set(self.codex_models[0])
+        self.status.set(self.t("model_saved"))
+
     def _apply_language(self):
         self.root.title(self.t("title"))
         for variable, key in self.text_bindings:
             variable.set(self.t(key))
+        if hasattr(self, "backend_box"):
+            self.backend_box.configure(values=[self.t("backend_codex"), self.t("backend_api")])
+            self.backend_box.set(self.t("backend_api") if self.ai_backend.get() == "api" else self.t("backend_codex"))
         if hasattr(self, "status") and not self.process:
             self.status.set(self.t("status_idle"))
 
@@ -356,6 +459,12 @@ class AutoApplyWindow:
             data.setdefault("cover_letter", {})["template_path"] = _copy_user_file(self.cover_template.get().strip(), "Cover Letter template") if self.cover_template.get().strip() else ""
             data.setdefault("profile", {})["notes"] = self.notes.get("1.0", "end").strip()
             data.setdefault("ui", {})["language"] = self.language.get()
+            ai = data.setdefault("ai", {})
+            ai["backend"] = "api" if self.ai_backend.get() == "api" else "codex"
+            ai["model"] = self.api_model.get().strip() if ai["backend"] == "api" else self.ai_model.get().strip()
+            ai["base_url"] = self.api_base_url.get().strip()
+            ai["api_key_env"] = self.api_key_env.get().strip() or "OPENAI_API_KEY"
+            ai["json_mode"] = bool(self.api_json_mode.get())
             _save_config(data)
             self.status.set(self.t("saved_path").format(path=CONFIG_PATH))
             return True

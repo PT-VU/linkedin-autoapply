@@ -79,6 +79,13 @@ The small Tk control panel exposes the settings most users need:
 - resume, cover-letter template, and job-requirements file selection;
 - start, stop, environment check, and live log output.
 
+The left-side gear tab, **Model Configuration**, reads visible model slugs from
+the local Codex model catalog/config and lets the user choose the Codex model.
+The same tab configures an OpenAI-compatible API backend, including base URL,
+model name, API-key environment-variable name, and optional JSON response mode.
+Only the environment-variable name is saved. The API key itself stays in the
+user's environment and is never written to `config.yaml`.
+
 Build the portable directory from a Windows PowerShell prompt:
 
 ```powershell
